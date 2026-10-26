@@ -24,21 +24,17 @@ MODEL_PATH = CARPETA / "modelo_california.pkl"
 TREE_IMAGE_PATH = CARPETA / "arbol_decision.png"
 AUTORES = "Sara Ibarz Abella y Edgar Aurich Ballano P1"
 
-
 def cargar_datos() -> pd.DataFrame:
     return fetch_california_housing(as_frame=True).frame
-
 
 def check_nulls(df: pd.DataFrame):
     """Muestra el número de valores nulos por columna."""
     print("Valores nulos por columna:")
     print(df.isnull().sum())
 
-
 def handle_nulls(df: pd.DataFrame) -> pd.DataFrame:
     """Descarta las filas con valores nulos."""
     return df.dropna()
-
 
 def plot_decision_tree(X, y, max_depth=None):
     """Valida max_depth, entrena un árbol y guarda su dibujo en un .png."""
@@ -56,7 +52,6 @@ def plot_decision_tree(X, y, max_depth=None):
     plt.close()
     return model
 
-
 def compute_errors(y_true, y_pred):
     """Calcula MAE y MSE y los muestra por pantalla."""
     mae = mean_absolute_error(y_true, y_pred)
@@ -64,7 +59,6 @@ def compute_errors(y_true, y_pred):
     print(f"MAE: {mae:.4f}")
     print(f"MSE: {mse:.4f}")
     return mae, mse
-
 
 def build_model(df: pd.DataFrame):
     """Entrena el árbol con los datos de entrenamiento y lo evalúa con los de prueba."""
@@ -78,27 +72,13 @@ def build_model(df: pd.DataFrame):
     compute_errors(y_test, model.predict(X_test))
     return model
 
-
 def main():
     df = cargar_datos()
-
-    # Ejercicio 3: nulos
     check_nulls(df)
     df = handle_nulls(df)
-
-    # Ejercicio 4 y 5: dibujo del árbol
     plot_decision_tree(df.drop(columns=[TARGET]), df[TARGET], max_depth=None)
-
-    # Ejercicio 7: entrenar, evaluar y guardar
     model = build_model(df)
     joblib.dump(model, MODEL_PATH)
 
-    print()
-    print("Archivos guardados en:", CARPETA)
-    print(" -", MODEL_PATH.name)
-    print(" -", TREE_IMAGE_PATH.name)
-    print(AUTORES)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
