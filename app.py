@@ -1,46 +1,66 @@
 import os
-import urllib.request
+from contextlib import asynccontextmanager
+
 import joblib
 import pandas as pd
-from flask import Flask, request, jsonify
+import requests
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
-app = Flask(__name__)
+MODEL_PATH = "modelo_california.pkl"
+# Sustituye <usuario> y <repositorio> por tus datos reales de GitHub
+MODEL_URL = "https://raw.githubusercontent.com/<usuario>/<repositorio>/main/modelo_california.pkl"
+DOWNLOAD_TIMEOUT = 30  # segundos
 
-MODEL_PATH = 'modelo_california.pkl'
-# IMPORTANTE: Sustituye esta URL por el enlace 'Raw' de tu modelo_california.pkl en GitHub
-GITHUB_RAW_URL = 'URL_RAW_GITHUB_AQUI'
+# El modelo se carga al arrancar y se guarda aquí.
+state = {"model": None}
 
-# Apartado 8: Descarga del modelo desde GitHub
-if not os.path.exists(MODEL_PATH):
-    print(f"Modelo {MODEL_PATH} no encontrado. Descargando desde GitHub...")
-    try:
-        urllib.request.urlretrieve(GITHUB_RAW_URL, MODEL_PATH)
-        print("Descarga completada con éxito.")
-    except Exception as e:
-        print(f"Error al descargar el modelo: {e}")
+class HouseFeatures(BaseModel):
+    """Variables de entrada del modelo (una zona censal)."""
+    MedInc: float
+    HouseAge: float
+    AveRooms: float
+    AveBedrms: float
+    Population: float
+    AveOccup: float
+    Latitude: float
+    Longitude: float
 
-try:
-    modelo = joblib.load(MODEL_PATH)
-except:
-    modelo = None
+def download_model(url: str = MODEL_URL, path: str = MODEL_PATH):
+    """Descarga el modelo desde `url` y lo guarda en `path`."""
+    print(f"Descargando modelo desde {url}...")
+    response = requests.get(url, timeout=DOWNLOAD_TIMEOUT)
+    response.raise_for_status()
+    with open(path, "wb") as f:
+        f.write(response.content)
+    print("Descarga completada.")
 
-# Apartado 4: Endpoint Health-check
-@app.route('/', methods=['GET'])
-def health_check():
-    return jsonify({"status": "Servicio de Edgar y Sara activo", "modelo": "California Housing"})
+def load_model(path: str = MODEL_PATH):
+    """Carga el modelo. Si no existe en local, lo descarga antes de GitHub."""
+    if not os.path.exists(path):
+        print(f"{path} no encontrado en local, descargando...")
+        download_model()
+    return joblib.load(path)
 
-# Apartado 4: Endpoint de predicción
-@app.route('/predict', methods=['POST'])
-def predict():
-    if not modelo:
-        return jsonify({"error": "Modelo no cargado"}), 500
-    try:
-        datos = request.get_json()
-        df = pd.DataFrame([datos])
-        prediccion = modelo.predict(df)
-        return jsonify({"prediccion": prediccion.tolist()})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Se ejecuta una vez al arrancar el servicio."""
+    state["model"] = load_model()
+    yield
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+app = FastAPI(title="Precio de casas en California", lifespan=lifespan)
+
+@app.get("/")
+def health():
+    """Health-check: confirma que el servicio está funcionando."""
+    return {"status": "ok"}
+
+@app.post("/predict")
+def predict(features: HouseFeatures):
+    """Devuelve el precio medio estimado (en cientos de miles de dólares)."""
+    model = state["model"]
+    if model is None:
+        raise HTTPException(status_code=503, detail="Modelo no cargado")
+    X = pd.DataFrame([features.model_dump()])
+    prediction = model.predict(X)[0]
+    return {"MedHouseVal": float(prediction)}
