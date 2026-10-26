@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 MODEL_PATH = "modelo_california.pkl"
 # Sustituye <usuario> y <repositorio> por tus datos reales de GitHub
-MODEL_URL = "https://raw.githubusercontent.com/<usuario>/<repositorio>/main/modelo_california.pkl"
+MODEL_URL = "https://raw.githubusercontent.com/tekenemura-hub/Practica-IA-2/main/modelo_california.pkl"
 DOWNLOAD_TIMEOUT = 30  # segundos
 
 # El modelo se carga al arrancar y se guarda aquí.
