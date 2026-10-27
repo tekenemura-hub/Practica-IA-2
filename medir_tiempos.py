@@ -1,7 +1,7 @@
 """Medición del tiempo de respuesta del servicio desplegado.
 
 Solo tienes que poner la URL de tu servicio en BASE_URL y ejecutar el script.
-Autores: <nombre1>, <nombre2>
+Autores: Sara Ibarz Abella, Edgar Aurich Ballano
 
 Nota: en el plan gratuito de Render el servicio se "duerme" tras un rato sin
 tráfico, así que la primera petición puede tardar mucho más (arranque en frío).
@@ -12,7 +12,7 @@ import time
 import requests
 
 # TODO: URL pública de tu servicio en Render (sin barra final)
-BASE_URL = sys.argv[1] if len(sys.argv) > 1 else "https://<tu-servicio>.onrender.com"
+BASE_URL = sys.argv[1] if len(sys.argv) > 1 else "https://practica-ia-2.onrender.com"
 TIMEOUT = 60  # segundos
 
 SAMPLE = {
